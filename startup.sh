@@ -1,10 +1,5 @@
 #!/bin/sh
 
-HN=hostname
-hostnamectl set-hostname "Docker-$HN"
-
-yum install -y subscription-manager
-
 # Add the Satellite's cert
 if [ -n "$SATHOST" ]; then
     echo "Adding satellite certificate http://$SATHOST/pub/katello-ca-consumer-latest.noarch.rpm"
@@ -49,3 +44,9 @@ mkdir ~/.ssh
 touch ~/.ssh/authorized_keys
 chmod -R 777 ~/.ssh
 curl https://$SATHOST:9090/ssh/pubkey >> ~/.ssh/authorized_keys
+
+# if the KILL arg was not passed, then keep the container running
+if [ -z "$KILL" ]; then
+    echo "Starting goferd in foreground."
+    goferd -f
+fi
