@@ -35,8 +35,7 @@ fi
 
 # Install katello agent
 subscription-manager refresh
-yum clean all && yum repolist enabled
-yum -y install katello-agent
+yum -y install katello-agent openssh-server openssh-clients passwd
 
 # Then prepare this host for remote execution
 echo "Preparing host for remote execution"
