@@ -43,9 +43,13 @@ mkdir ~/.ssh
 touch ~/.ssh/authorized_keys
 chmod -R 777 ~/.ssh
 curl https://$SATHOST:9090/ssh/pubkey >> ~/.ssh/authorized_keys
+sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+ssh-keygen -A
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then
     echo "Starting goferd in foreground."
+    /usr/sbin/sshd -D
     goferd -f
 fi
