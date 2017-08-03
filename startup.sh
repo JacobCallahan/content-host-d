@@ -21,7 +21,7 @@ fi
 
 # Register to the sat if an activation key specified
 if [ -n "$AK" ]; then
-    echo "Activation key $AK found. Registering..."
+    echo "Activation key $AK provided. Registering..."
     subscription-manager register --org="$ORG" --activationkey="$AK"
 # If an environment is otherwise specified, use it
 elif [ -n "$ENV" ]; then
@@ -33,19 +33,37 @@ else
     subscription-manager register --org="$ORG" --environment="Library" $AUTH
 fi
 
-# Install katello agent
-subscription-manager refresh
-yum -y install katello-agent openssh-server openssh-clients passwd
+# Install puppet 
+subscription-manager attach --auto
+yum clean all && yum repolist enabled
+yum -y install puppet
+systemctl enable puppet
+sed -i "2i\    server = $SATHOST" /etc/puppet/puppet.conf
+echo "    ca_server = $SATHOST" >> /etc/puppet/puppet.conf
+echo "    server = $SATHOST" >> /etc/puppet/puppet.conf
+echo "    environment = production" >> /etc/puppet/puppet.conf
+echo "    pluginsync = true" >> /etc/puppet/puppet.conf
+echo "    report = true" >> /etc/puppet/puppet.conf
+echo "    ignoreschedules = true" >> /etc/puppet/puppet.conf
+echo "    daemon = false" >> /etc/puppet/puppet.conf
 
-# Then prepare this host for remote execution
-echo "Preparing host for remote execution"
-mkdir ~/.ssh
-touch ~/.ssh/authorized_keys
-chmod -R 777 ~/.ssh
-curl https://$SATHOST:9090/ssh/pubkey >> ~/.ssh/authorized_keys
+echo "10.19.34.24 yttrium.idmqe.lab.eng.bos.redhat.com yttrium" >> /etc/hosts
+
+echo "Initial puppet registration"
+puppet agent -t --server $SATHOST
+echo "sleeping for 1 minute. make sure $(hostname) has a valid certificate"
+sleep 60
+echo "Second puppet registration"
+puppet agent -t --server $SATHOST
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then
-    echo "Starting goferd in foreground."
-    goferd -f
+    echo "Starting fact flood."
+    while true
+    do
+        echo "Updating facts..."
+        puppet facts upload
+        echo "sleeping"
+        sleep 1
+    done
 fi
