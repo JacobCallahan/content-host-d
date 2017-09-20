@@ -21,7 +21,7 @@ fi
 
 # Register to the sat if an activation key specified
 if [ -n "$AK" ]; then
-    echo "Activation key $AK found. Registering..."
+    echo "Activation key $AK specified. Registering..."
     subscription-manager register --org="$ORG" --activationkey="$AK"
 # If an environment is otherwise specified, use it
 elif [ -n "$ENV" ]; then
@@ -34,18 +34,10 @@ else
 fi
 
 # Install katello agent
-subscription-manager refresh
-yum -y install katello-agent openssh-server openssh-clients passwd
-
-# Then prepare this host for remote execution
-echo "Preparing host for remote execution"
-mkdir ~/.ssh
-touch ~/.ssh/authorized_keys
-chmod -R 777 ~/.ssh
-curl https://$SATHOST:9090/ssh/pubkey >> ~/.ssh/authorized_keys
+yum -y install katello-agent
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then
-    echo "Starting goferd in foreground."
-    goferd -f
+    echo "Tailing rhsm log."
+    tail -f /var/log/rhsm/rhsm.log
 fi
