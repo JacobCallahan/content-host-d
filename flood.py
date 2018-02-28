@@ -89,7 +89,7 @@ if __name__ == '__main__':
     else:
         criteria = 60
 
-    print ("Starting content host creationi with criteria {}.".format(criteria))
+    print ("Starting content host creation with criteria {}.".format(criteria))
     host_flood(
         args.count, args.host, args.key, args.tag,
         args.name, limit, image, criteria, org
