@@ -1,4 +1,4 @@
-FROM jacobcallahan/opensuse-subman
+FROM jacobcallahan/opensuse-host
 MAINTAINER https://github.com/JacobCallahan
 
 ENV HOME /root
