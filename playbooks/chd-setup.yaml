@@ -1,0 +1,29 @@
+---
+# This playbook will setup a docker-ized content host deployment
+# environment on the target server.
+# Prerequisites:
+# - If you are using rhel host, make sure it is subscribed to the Red Hat portal:
+#     subscription-manager register --force --activationkey=<ak> --org=<org>
+# - Enable rhel 7 server extras rpms to install docker:
+#     subscription-manager repos --enable rhel-7-server-extras-rpms
+# - Make sure you are in content-host-d/playbooks directory and run
+# - # ansible-playbook -i hosts chd-setup.yaml
+#
+# After completion, a RHEL 7.4 docker image will be available.
+- hosts: home
+  remote_user: root
+  tasks:
+  - name: Install Docker
+    package: name=docker state=latest
+  - service: name=docker state=started enabled=yes
+
+  - name: Install python pip
+    easy_install: name=pip
+  - name: Install docker-py
+    pip: name=docker-py state=latest
+
+  - name: Build RHEL 7 content host image
+    docker_image:
+      path: /root/content-host-d/RHEL7/
+      name: ch-d
+      tag: rhel7
