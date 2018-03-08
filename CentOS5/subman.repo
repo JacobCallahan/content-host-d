@@ -1,0 +1,5 @@
+[subman]
+name=Subscription Manager
+baseurl=https://fedorapeople.org/groups/katello/releases/yum/2.2/client/RHEL/5/x86_64/
+enabled=1
+gpgcheck=0

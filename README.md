@@ -1,10 +1,17 @@
 # content-host-d
 A Docker-ized Centos Content Host for Red Hat Satellite 6
-Current tags are: 5, 6, 7, latest
+
+Current automated tags are: centos5, centos6, centos7, sles11, sles12, opensuse
+
+Manual tags are: rhel6, rhel72, rhel7
 
 Installation
 ------------
 ```docker pull jacobcallahan/content-host-d:<tag>```
+
+or specify a directory and build the image manually
+
+```docker build -t ch-d:sles11 SLES11/.```
 
 Usage
 -----
@@ -37,3 +44,13 @@ Examples
 ```for i in {1..10}; do docker run -d -e "SATHOST=my.host.domain.com" -e "AK=sat62" -e "KILL=1" jacobcallahan/content-host-d:6; done;```
 
 ```for i in {1..10}; do docker run -d -h Docker$i -e "SATHOST=my.host.domain.com" -e "AK=sat62" jacobcallahan/content-host-d:7; done;```
+
+Flood Script
+------------
+This repo also contains a flood.py helper script to orchestrate container creation and deletion. You will need python and docker-py (via pip) installed locally.
+
+See ```python flood.py -h``` for usage.
+
+There are two primary modes:
+ - Traditional - Create normal content host containers.
+ - Virt - Create fake hypervisors on the Satellite, then create guest container hosts.
