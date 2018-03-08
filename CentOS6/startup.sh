@@ -34,16 +34,7 @@ else
 fi
 
 # Install katello agent
-subscription-manager refresh
-yum clean all && yum repolist enabled
 yum -y install katello-agent
-
-# Then prepare this host for remote execution
-echo "Preparing host for remote execution"
-mkdir ~/.ssh
-touch ~/.ssh/authorized_keys
-chmod -R 777 ~/.ssh
-curl https://$SATHOST:9090/ssh/pubkey >> ~/.ssh/authorized_keys
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then

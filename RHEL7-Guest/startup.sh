@@ -47,18 +47,11 @@ fi
 
 
 # Install katello agent
-subscription-manager refresh
-yum -y install katello-agent openssh-server openssh-clients passwd
-
-# Then prepare this host for remote execution
-echo "Preparing host for remote execution"
-mkdir ~/.ssh
-touch ~/.ssh/authorized_keys
-chmod -R 777 ~/.ssh
-curl https://$SATHOST:9090/ssh/pubkey >> ~/.ssh/authorized_keys
+yum -y install katello-agent
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then
     echo "Starting goferd in foreground."
     goferd -f
+    tail -f /var/log/rhsm/rhsm.log
 fi
