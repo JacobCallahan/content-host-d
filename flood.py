@@ -26,11 +26,11 @@ def gen_json(hypervisors, guests):
         virtwho[str(uuid.uuid4()).replace("-", ".")] = guest_list
     return (virtwho, all_guest_list)
 
-def rm_container(client, containers):
+def rm_container(client, containers, reason="Success"):
     del_container = containers[0]
     client.remove_container(del_container['container'], v=True, force=True)
     del containers[0]
-    print ('Done with {0}'.format(del_container['name']))
+    print ('Done with {0}: {1}'.format(del_container['name'], reason))
 
 def host_flood(count, tag, name, env_vars, limit, image, criteria):
     client = docker.Client(version='1.22')  # docker.from_env()
@@ -51,21 +51,30 @@ def host_flood(count, tag, name, env_vars, limit, image, criteria):
             num += 1
 
         logs = client.logs(containers[0]['container']['Id'])
+
         if criteria == 'reg':
             if 'system has been registered'.encode() in logs:
                 rm_container(client, containers)
+            elif 'no enabled repos'.encode() in logs:
+                rm_container(
+                    client, containers,
+                    'No repos enabled. Check registration/subscription status.')
         elif criteria == 'age':
             if 'Complete!'.encode() in logs:
                 rm_container(client, containers)
             elif 'no enabled repos'.encode() in logs:
-                rm_container(client, containers)
+                rm_container(
+                    client, containers,
+                    'No repos enabled. Check registration/subscription status.')
             elif 'No package katello-agent available'.encode() in logs:
-                rm_container(client, containers)
+                rm_container(client, containers, 'katello-agent not found.')
         else:
-            if 'no enabled repos'.encode() in logs:
-                rm_container(client, containers)
-            elif 'No package katello-agent available'.encode() in logs:
-                rm_container(client, containers)
+            if 'No package katello-agent available'.encode() in logs:
+                rm_container(client, containers, 'katello-agent not found.')
+            elif 'no enabled repos'.encode() in logs:
+                rm_container(
+                    client, containers,
+                    'No repos enabled. Check registration/subscription status.')
             elif time.time() - containers[0].get('delay', time.time()) >= criteria:
                 rm_container(client, containers)
             elif not containers[0].get('delay', False) and 'Complete!'.encode() in logs:
