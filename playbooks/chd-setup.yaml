@@ -2,28 +2,52 @@
 # This playbook will setup a docker-ized content host deployment
 # environment on the target server.
 # Prerequisites:
-# - If you are using rhel host, make sure it is subscribed to the Red Hat portal:
-#     subscription-manager register --force --activationkey=<ak> --org=<org>
-# - Enable rhel 7 server extras rpms to install docker:
-#     subscription-manager repos --enable rhel-7-server-extras-rpms
+# - If you are using rhel host, make sure you supply valid values for
+#   RHN_USERNAME, RHN_PASSWORD, RHN_POOLID in this playbook
 # - Make sure you are in content-host-d/playbooks directory and run
-# - # ansible-playbook -i hosts chd-setup.yaml
+# - # ansible-playbook chd-setup.yaml
 #
 # After completion, a RHEL 7.4 docker image will be available.
 - hosts: home
   remote_user: root
+  vars:
+    RHN_USERNAME: changeme
+    RHN_PASSWORD: changeme
+    RHN_POOLID: changeme
+    REGISTER_TO_PORTAL: true
+    WORKSPACE: changeme
   tasks:
-  - name: Install Docker
-    package: name=docker state=latest
-  - service: name=docker state=started enabled=yes
+    - name : Register and Subscribe to Red Hat portal
+      command: subscription-manager register --force --username={{ RHN_USERNAME }} --password={{ RHN_PASSWORD }}
+      when: REGISTER_TO_PORTAL
+    - name: Attach right subscription pool
+      command: subscription-manager attach --pool {{ RHN_POOLID }}
+      when: REGISTER_TO_PORTAL
+    - name: Enable extras repo
+      command: subscription-manager repos --enable rhel-{{ ansible_distribution_major_version }}-server-extras-rpms
+      when: REGISTER_TO_PORTAL
 
-  - name: Install python pip
-    easy_install: name=pip
-  - name: Install docker-py
-    pip: name=docker-py state=latest
+    - name: Install Docker
+      package: name=docker state=latest
+    - service: name=docker state=started enabled=yes
 
-  - name: Build RHEL 7 content host image
-    docker_image:
-      path: /root/content-host-d/RHEL7/
-      name: ch-d
-      tag: rhel7
+    - name: Install python pip
+      easy_install: name=pip
+    - name: Install docker-py
+      pip: name=docker-py state=latest
+
+    - name: copy docker files for RHEL 7
+      copy:
+        src: "{{ WORKSPACE }}/RHEL7/"
+        dest: /content-host-d/RHEL7
+    - name: Build RHEL 7 content host image
+      docker_image:
+        path: /content-host-d/RHEL7/
+        name: ch-d
+        tag: rhel7
+
+    - name: copy flood.py
+      copy:
+        src: "{{ WORKSPACE }}/flood.py"
+        dest: /content-host-d/
+        mode: 0755
