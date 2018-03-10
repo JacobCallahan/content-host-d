@@ -32,19 +32,44 @@ def rm_container(client, containers, reason="Success"):
     del containers[0]
     print ('Done with {0}: {1}'.format(del_container['name'], reason))
 
-def host_flood(count, tag, name, env_vars, limit, image, criteria):
+def host_flood(count, tag, name, env_vars, limit, image, criteria, rhsm_log_dir):
     client = docker.Client(version='1.22')  # docker.from_env()
     num = 1
     containers = deque()
+    # create our base volume bind
+    binds = {
+        '/dev/log': {
+            'bind': '/dev/log',
+            'mode': 'rw',
+        }
+    }
+    # allow for local storage of rhsm logs
+    if rhsm_log_dir:
+        rhsm_log_dir = '' if rhsm_log_dir == '.' else rhsm_log_dir
+        if not os.path.isabs(rhsm_log_dir):
+            rhsm_log_dir = os.path.abspath(rhsm_log_dir)
+        if not os.path.isdir(rhsm_log_dir):
+            os.makedirs(rhsm_log_dir)
+
     while num < count or containers:
         if len(containers) < limit and num <= count:  # check if queue is full
+            if rhsm_log_dir:
+                # create our log bind
+                local_file = '{}/{}{}.log'.format(rhsm_log_dir, name, num)
+                with open(local_file, 'w'): pass
+                binds[local_file] = {
+                    'bind': '/var/log/rhsm/rhsm.log',
+                    'mode': 'rw'
+                }
             container = client.create_container(
                 image='{0}:{1}'.format(image, tag),
                 hostname='{0}{1}'.format(name, num),
                 detach=False,
                 environment=env_vars,
-                volumes='/dev/log:/dev/log:Z'
+                host_config=client.create_host_config(binds=binds)
             )
+            # destroy the bind for this host, for the next one
+            del binds[local_file]
             containers.append({'container': container, 'name': num})
             client.start(container=container)
             print ('Created: {0}'.format(num))
@@ -182,6 +207,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "--exit-criteria", type=str, help="The criteria to kill the host "
         "(registration, katello-agent, <time in seconds>).")
+    parser.add_argument(
+        "--rhsm-log-dir", type=str, help="A directory path to store "
+        "rhsm.log files. If no directory exists, it will be created.")
     args = parser.parse_args()
 
     if args.exit_criteria:
@@ -217,5 +245,5 @@ if __name__ == '__main__':
     else:
         print ("Starting content host creation with criteria {}.".format(criteria))
         host_flood(args.count, args.tag, args.name, env_vars,
-                   args.limit, args.image, criteria)
+                   args.limit, args.image, criteria, args.rhsm_log_dir)
     print ("Finished content host creation.")
