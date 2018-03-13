@@ -8,7 +8,7 @@
 # - # ansible-playbook chd-setup.yaml
 #
 # After completion, a RHEL 7.4 docker image will be available.
-- hosts: home
+- hosts: all
   remote_user: root
   vars:
     RHN_USERNAME: changeme

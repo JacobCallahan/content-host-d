@@ -1,6 +1,6 @@
 ---
 # This playbook will run flood.py on the target host.
-- hosts: home
+- hosts: all
   remote_user: root
   vars:
     SATELLITE_HOST: changeme
