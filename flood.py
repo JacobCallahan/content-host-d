@@ -62,18 +62,19 @@ def host_flood(count, tag, name, env_vars, limit, image, criteria, rhsm_log_dir)
                     'bind': '/var/log/rhsm/rhsm.log',
                     'mode': 'rw'
                 }
+            hostname='{0}{1}'.format(name, num)
             container = client.create_container(
                 image='{0}:{1}'.format(image, tag),
-                hostname='{0}{1}'.format(name, num),
+                hostname=hostname,
                 detach=False,
                 environment=env_vars,
                 host_config=client.create_host_config(binds=binds)
             )
             # destroy the bind for this host, for the next one
             del binds[local_file]
-            containers.append({'container': container, 'name': num})
+            containers.append({'container': container, 'name': hostname})
             client.start(container=container)
-            logging.info('Created: {0}'.format(num))
+            logging.info('Created: {0}'.format(hostname))
             num += 1
 
         logs = client.logs(containers[0]['container']['Id'])
