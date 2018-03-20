@@ -29,6 +29,12 @@ def gen_json(hypervisors, guests):
 
 def rm_container(client, containers, reason="Success"):
     del_container = containers[0]
+    with open("container.log", "a") as log:
+        log.write(
+            "***********************************{0}****************************\n".format(
+            del_container['name'])
+        )
+        log.write(client.logs(del_container['container']['Id']))
     client.remove_container(del_container['container'], v=True, force=True)
     del containers[0]
     logging.info('Done with {0}: {1}'.format(del_container['name'], reason))
