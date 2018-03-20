@@ -8,7 +8,8 @@
     ACTIVATION_KEY: changeme
     NUMBER_OF_HOSTS: changeme
     EXIT_CRITERIA: changeme
-    RHSM_LOG_DIR: /content-host-d
+    RHSM_LOG_DIR: rhsm_logs
   tasks:
   - name: Run flood.py command
-    command: "python /content-host-d/flood.py --satellite {{ SATELLITE_HOST }} --name {{ CONTENT_HOST_PREFIX }} --key {{ ACTIVATION_KEY }} --count {{ NUMBER_OF_HOSTS }} --exit-criteria {{ EXIT_CRITERIA }} --rhsm-log-dir {{ RHSM_LOG_DIR }}"
+    chdir: /content-host-d/
+    command: "python flood.py --satellite {{ SATELLITE_HOST }} --name {{ CONTENT_HOST_PREFIX }} --key {{ ACTIVATION_KEY }} --count {{ NUMBER_OF_HOSTS }} --exit-criteria {{ EXIT_CRITERIA }} --rhsm-log-dir {{ RHSM_LOG_DIR }}"
