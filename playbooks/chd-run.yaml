@@ -11,5 +11,6 @@
     RHSM_LOG_DIR: rhsm_logs
   tasks:
   - name: Run flood.py command
-    chdir: /content-host-d/
     command: "python flood.py --satellite {{ SATELLITE_HOST }} --name {{ CONTENT_HOST_PREFIX }} --key {{ ACTIVATION_KEY }} --count {{ NUMBER_OF_HOSTS }} --exit-criteria {{ EXIT_CRITERIA }} --rhsm-log-dir {{ RHSM_LOG_DIR }}"
+    args:
+      chdir: /content-host-d/
