@@ -54,3 +54,20 @@ See ```python flood.py -h``` for usage.
 There are two primary modes:
  - Traditional - Create normal content host containers.
  - Virt - Create fake hypervisors on the Satellite, then create guest container hosts.
+ 
+Ansible-playbook run
+--------------------
+You can also use the available playbooks in `playbooks` folder of this project to setup a container host or run the flood.py script.
+
+Examples
+--------
+container host setup
+
+```sh
+ansible-playbook --inventory=containerhost.example.com, --extra-vars 'WORKSPACE=/home/testlab/workspace/content-host-d CONTAINER_OS=RHEL7' chd-setup.yaml
+```
+Run flood.py
+
+```sh
+ansible-playbook --inventory=containerhost.example.com, --extra-vars 'SATELLITE_HOST=satellite.example.com CONTENT_HOST_PREFIX=testhost ACTIVATION_KEY=rhel7ak NUMBER_OF_HOSTS=3 EXIT_CRITERIA=registration CONTAINER_TAG=rhel7' chd-run.yaml
+```
