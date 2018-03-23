@@ -15,6 +15,14 @@
     RHN_PASSWORD: changeme
     RHN_POOLID: changeme
     REGISTER_TO_PORTAL: true
+    # CUSTOM_CONTAINER_STARTUP_FILE should point to the URL of the custom container startup file
+    # eg., http://example.com/startup.sh
+    CUSTOM_CONTAINER_STARTUP_FILE: none
+    # CONTAINER_OS should be one of the following:
+    # RHEL7, RHEL72, RHEL7-Guest, RHEL6
+    # CentOS5, CentOS6, CentOS7
+    # OpenSuse, SLES11, SLES12
+    CONTAINER_OS: RHEL7
     WORKSPACE: changeme
   tasks:
     - name : Register and Subscribe to Red Hat portal
@@ -36,15 +44,22 @@
     - name: Install docker-py
       pip: name=docker-py state=latest
 
-    - name: copy docker files for RHEL 7
+    - name: copy docker files for {{ CONTAINER_OS }}
       copy:
-        src: "{{ WORKSPACE }}/RHEL7/"
-        dest: /content-host-d/RHEL7
-    - name: Build RHEL 7 content host image
+        src: "{{ WORKSPACE }}/{{ CONTAINER_OS }}/"
+        dest: "/content-host-d/{{ CONTAINER_OS }}"
+    - name: download custom container startup file
+      get_url:
+        url: "{{ CUSTOM_CONTAINER_STARTUP_FILE }}"
+        dest: "/content-host-d/{{ CONTAINER_OS }}/startup.sh"
+        force: yes
+        mode: 0755
+      when: CUSTOM_CONTAINER_STARTUP_FILE != "none"
+    - name: Build {{ CONTAINER_OS }} content host image
       docker_image:
-        path: /content-host-d/RHEL7/
+        path: "/content-host-d/{{ CONTAINER_OS }}/"
         name: ch-d
-        tag: rhel7
+        tag: "{{ CONTAINER_OS|lower }}"
 
     - name: copy flood.py
       copy:
