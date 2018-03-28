@@ -60,6 +60,7 @@ def host_flood(count, tag, name, env_vars, limit, image, criteria, rhsm_log_dir)
 
     while num < count or containers:
         if len(containers) < limit and num <= count:  # check if queue is full
+            local_file = None
             if rhsm_log_dir:
                 # create our log bind
                 local_file = '{}/{}{}.log'.format(rhsm_log_dir, name, num)
@@ -77,7 +78,8 @@ def host_flood(count, tag, name, env_vars, limit, image, criteria, rhsm_log_dir)
                 host_config=client.create_host_config(binds=binds)
             )
             # destroy the bind for this host, for the next one
-            del binds[local_file]
+            if binds.get(local_file or None):
+                del binds[local_file]
             containers.append({'container': container, 'name': hostname})
             client.start(container=container)
             logging.info('Created: {0}'.format(hostname))
