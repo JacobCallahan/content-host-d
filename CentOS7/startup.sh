@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# Adding the local entry on /etc/hosts
+if [ -n "$LOCAL" ]; then
+    echo "Adding entry '$LOCAL $SATHOST' on /etc/hosts"
+    echo "$LOCAL $SATHOST" >>/etc/hosts
+fi
+
 # Add the Satellite's cert
 if [ -n "$SATHOST" ]; then
     echo "Adding satellite certificate http://$SATHOST/pub/katello-ca-consumer-latest.noarch.rpm"
@@ -42,3 +48,4 @@ if [ -z "$KILL" ]; then
     goferd -f
     tail -f /var/log/rhsm/rhsm.log
 fi
+
