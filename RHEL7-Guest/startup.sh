@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# Adding the local entry on /etc/hosts
+if [ -n "$LOCAL" ]; then
+    echo "Adding entry '$LOCAL $SATHOST' on /etc/hosts"
+    echo "$LOCAL $SATHOST" >>/etc/hosts 
+fi
+
 # Add custom facts to fake being a virt-who guest
 if [ -n "$UUID" ]; then
     echo "Adding guest config with UUID: $UUID."
