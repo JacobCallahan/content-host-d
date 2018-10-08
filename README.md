@@ -26,6 +26,7 @@ Accepted Arguments
  * KILL - If this is not passed, then the container will be kept alive and goferd running.
  * ORG - Name of the Organization to use.
  * SATHOST(Required) - Hostname of the Satellite (not url).
+ * LOCAL - IP Address of the Satellite Server when we are not able to retrieve the correct info via DNS.
 
 Note
 ----
@@ -34,6 +35,8 @@ If you want to be able to use katello-agent, you must mount your /dev/log to the
 Examples
 --------
 ```docker run -e "SATHOST=my.host.domain.com" jacobcallahan/content-host-d:5```
+
+```docker run -e "SATHOST=my.host.domain.com" -e "LOCAL=192.168.0.10" jacobcallahan/content-host-d:5```
 
 ```docker run -e "SATHOST=my.host.domain.com" -e "ENV=Dev" -e "AUTH=username/password" jacobcallahan/content-host-d:6```
 
