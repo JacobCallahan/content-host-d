@@ -266,13 +266,13 @@ if __name__ == '__main__':
         "--hypervisors",
         type=int,
         help="The number of hypervisors to create."
-        " This is only to be used with the 'guest' tag",
+        " This is only to be used with the 'guests' tag",
     )
     parser.add_argument(
         "--guests",
         type=int,
         help="The number of guests per hypervisor to create."
-        " This is only to be used with the 'guest' tag",
+        " This is only to be used with the 'hypervisors' tag",
     )
     parser.add_argument(
         "--limit",
