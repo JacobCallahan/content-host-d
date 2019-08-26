@@ -1,4 +1,4 @@
-FROM fedora:28
+FROM fedora:30
 MAINTAINER https://github.com/JacobCallahan
 
 ENV HOME /root
