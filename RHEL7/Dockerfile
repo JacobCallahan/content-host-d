@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/rhel7.6
+FROM registry.access.redhat.com/rhel7.7
 MAINTAINER https://github.com/JacobCallahan
 
 ENV HOME /root

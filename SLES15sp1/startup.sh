@@ -9,7 +9,7 @@ fi
 # Add the Satellite's cert
 if [ -n "$SATHOST" ]; then
     echo "Adding satellite certificate http://$SATHOST/pub/katello-ca-consumer-latest.noarch.rpm"
-    wget http://$SATHOST/pub/katello-ca-consumer-latest.noarch.rpm
+    curl --insecure --output katello-ca-consumer-latest.noarch.rpm http://$SATHOST/pub/katello-ca-consumer-latest.noarch.rpm
     rpm -Uvh katello-ca-consumer-latest.noarch.rpm
 fi
 
@@ -41,8 +41,8 @@ else
 fi
 
 # Install katello agent
-echo "Trying to install katello-agent"
-yum -y install katello-agent
+echo "Trying to install katello-host-tools"
+zypper --no-gpg-checks in -y katello-host-tools
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then
