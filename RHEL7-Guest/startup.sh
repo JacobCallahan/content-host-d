@@ -3,7 +3,7 @@
 # Adding the local entry on /etc/hosts
 if [ -n "$LOCAL" ]; then
     echo "Adding entry '$LOCAL $SATHOST' on /etc/hosts"
-    echo "$LOCAL $SATHOST" >>/etc/hosts 
+    echo "$LOCAL $SATHOST" >>/etc/hosts
 fi
 
 # Add custom facts to fake being a virt-who guest
@@ -21,7 +21,7 @@ fi
 # Configure our registration auth, if provided
 if [ -n "$AUTH" ]; then
     IFS="/" read -r UNAME PWORD <<< "$AUTH"
-    AUTH='--username="$UNAME" --password="$PWORD"'
+    AUTH="--username=$UNAME --password=$PWORD"
 else
     AUTH="--username="admin" --password="changeme""
 fi

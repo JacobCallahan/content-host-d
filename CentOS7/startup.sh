@@ -15,7 +15,7 @@ fi
 # Configure our registration auth, if provided
 if [ -n "$AUTH" ]; then
     IFS="/" read -r UNAME PWORD <<< "$AUTH"
-    AUTH='--username="$UNAME" --password="$PWORD"'
+    AUTH="--username=$UNAME --password=$PWORD"
 else
     AUTH="--username="admin" --password="changeme""
 fi
