@@ -26,6 +26,8 @@ if [ -z "$ORG" ]; then
     ORG="Default_Organization"
 fi
 
+cp /var/lib/rhsm/kdf/* /etc/pki/product/.
+
 # Register to the sat if an activation key specified
 if [ -n "$AK" ]; then
     echo "Activation key $AK specified. Registering..."
