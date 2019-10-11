@@ -44,7 +44,7 @@ def rm_container(client, containers, reason="Success"):
     logging.info('Done with {0}: {1}'.format(del_container['name'], reason))
 
 
-def host_flood(count, tag, name, env_vars, limit, image, criteria, rhsm_log_dir):
+def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria, rhsm_log_dir):
     client = docker.Client(version='1.22')  # docker.from_env()
     num = 1
     containers = deque()
@@ -79,7 +79,7 @@ def host_flood(count, tag, name, env_vars, limit, image, criteria, rhsm_log_dir)
             if binds.get(local_file or None):
                 del binds[local_file]
             containers.append({'container': container, 'name': hostname})
-            client.start(container=container)
+            client.start(container=container, network_mode=network_mode)
             logging.info('Created: {0}'.format(hostname))
             num += 1
 
@@ -219,6 +219,13 @@ if __name__ == '__main__':
         help="The image tag you want the container based on. ch-d:<tag>",
     )
     parser.add_argument(
+        "-m",
+        "--network-mode",
+        type=str,
+        default=None,
+        help="Container network mode to use.",
+    )
+    parser.add_argument(
         "-s",
         "--satellite",
         type=str,
@@ -336,6 +343,7 @@ if __name__ == '__main__':
             env_vars,
             args.limit,
             args.image,
+            args.network_mode,
             criteria,
             args.rhsm_log_dir,
         )
