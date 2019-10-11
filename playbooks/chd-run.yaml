@@ -10,6 +10,7 @@
     EXIT_CRITERIA: changeme
     RHSM_LOG_DIR: rhsm_logs
     CONTAINER_TAG: rhel7
+    NETWORK_MODE: changeme
     LIMIT: 100
   tasks:
   - name: Run flood.py command
@@ -22,6 +23,7 @@
           --exit-criteria {{ EXIT_CRITERIA }}
           --rhsm-log-dir {{ RHSM_LOG_DIR }}
           --tag {{ CONTAINER_TAG }}
+          --network-mode {{ NETWORK_MODE }}
           --limit {{ LIMIT }}
     args:
       chdir: /content-host-d/
