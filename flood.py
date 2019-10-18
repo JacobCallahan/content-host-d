@@ -127,7 +127,7 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
                 rm_container(client, containers)
 
 
-def virt_flood(tag, limit, image, name, env_vars, hypervisors, guests):
+def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, guests):
     virt_data, guest_list = gen_json(hypervisors, guests)
     with open('/tmp/temp.json', 'w') as f:
         json.dump(virt_data, f)
@@ -149,7 +149,7 @@ def virt_flood(tag, limit, image, name, env_vars, hypervisors, guests):
             binds={'/tmp/temp.json': {'bind': '/tmp/temp.json', 'mode': 'ro'}}
         ),
     )
-    client.start(container=container)
+    client.start(container=container, network_mode=network_mode)
     while 'Done!'.encode() not in client.logs(container):
         time.sleep(2)
     client.remove_container(container, v=True, force=True)
@@ -172,7 +172,7 @@ def virt_flood(tag, limit, image, name, env_vars, hypervisors, guests):
                 environment=merge_dicts(env_vars, {'UUID': guest}),
             )
             active_hosts.append({'container': container, 'name': hostname})
-            client.start(container=container)
+            client.start(container=container, network_mode=network_mode)
             logging.info(
                 'Created Guest: {}. {} left in queue.'.format(hostname, len(guest_list))
             )
@@ -330,7 +330,7 @@ if __name__ == '__main__':
         tag = 'guest' if not args.tag else args.tag
         guests = 5 if not args.guests else args.guests
         virt_flood(
-            tag, args.limit, args.image, args.name, env_vars, args.hypervisors, guests
+            tag, args.limit, args.image, args.name, env_vars, args.network_mode, args.hypervisors, guests
         )
     else:
         logging.info(
