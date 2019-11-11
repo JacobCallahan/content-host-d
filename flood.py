@@ -35,24 +35,26 @@ def rm_container(client, containers, reason="Success"):
     with open("container.log", "a") as log:
         log.write(
             "***********************************{0}****************************\n".format(
-                del_container['name']
+                del_container["name"]
             )
         )
-        log.write(client.logs(del_container['container']['Id']))
-    client.remove_container(del_container['container'], v=True, force=True)
+        log.write(client.logs(del_container["container"]["Id"]))
+    client.remove_container(del_container["container"], v=True, force=True)
     del containers[0]
-    logging.info('Done with {0}: {1}'.format(del_container['name'], reason))
+    logging.info("Done with {0}: {1}".format(del_container["name"], reason))
 
 
-def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria, rhsm_log_dir):
-    client = docker.Client(version='1.22')  # docker.from_env()
+def host_flood(
+    count, tag, name, env_vars, limit, image, network_mode, criteria, rhsm_log_dir
+):
+    client = docker.Client(version="1.22")  # docker.from_env()
     num = 1
     containers = deque()
     # create our base volume bind
-    binds = {'/dev/log': {'bind': '/dev/log', 'mode': 'rw'}}
+    binds = {"/dev/log": {"bind": "/dev/log", "mode": "rw"}}
     # allow for local storage of rhsm logs
     if rhsm_log_dir:
-        rhsm_log_dir = '' if rhsm_log_dir == '.' else rhsm_log_dir
+        rhsm_log_dir = "" if rhsm_log_dir == "." else rhsm_log_dir
         if not os.path.isabs(rhsm_log_dir):
             rhsm_log_dir = os.path.abspath(rhsm_log_dir)
         if not os.path.isdir(rhsm_log_dir):
@@ -63,13 +65,13 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
             local_file = None
             if rhsm_log_dir:
                 # create our log bind
-                local_file = '{}/{}{}.log'.format(rhsm_log_dir, name, num)
-                with open(local_file, 'w'):
+                local_file = "{}/{}{}.log".format(rhsm_log_dir, name, num)
+                with open(local_file, "w"):
                     pass
-                binds[local_file] = {'bind': '/var/log/rhsm/rhsm.log', 'mode': 'rw'}
-            hostname = '{0}{1}'.format(name, num)
+                binds[local_file] = {"bind": "/var/log/rhsm/rhsm.log", "mode": "rw"}
+            hostname = "{0}{1}".format(name, num)
             container = client.create_container(
-                image='{0}:{1}'.format(image, tag),
+                image="{0}:{1}".format(image, tag),
                 hostname=hostname,
                 detach=False,
                 environment=env_vars,
@@ -78,82 +80,82 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
             # destroy the bind for this host, for the next one
             if binds.get(local_file or None):
                 del binds[local_file]
-            containers.append({'container': container, 'name': hostname})
+            containers.append({"container": container, "name": hostname})
             client.start(container=container, network_mode=network_mode)
-            logging.info('Created: {0}'.format(hostname))
+            logging.info("Created: {0}".format(hostname))
             num += 1
 
-        logs = client.logs(containers[0]['container']['Id'])
+        logs = client.logs(containers[0]["container"]["Id"])
 
-        if criteria == 'reg':
-            if 'system has been registered'.encode() in logs:
+        if criteria == "reg":
+            if "system has been registered".encode() in logs:
                 rm_container(client, containers)
-            elif 'no enabled repos'.encode() in logs:
+            elif "no enabled repos".encode() in logs:
                 rm_container(
                     client,
                     containers,
-                    'No repos enabled. Check registration/subscription status.',
+                    "No repos enabled. Check registration/subscription status.",
                 )
-        elif criteria == 'age':
-            if 'Complete!'.encode() in logs:
+        elif criteria == "age":
+            if "Complete!".encode() in logs:
                 rm_container(client, containers)
-            elif 'no enabled repos'.encode() in logs:
+            elif "no enabled repos".encode() in logs:
                 rm_container(
                     client,
                     containers,
-                    'No repos enabled. Check registration/subscription status.',
+                    "No repos enabled. Check registration/subscription status.",
                 )
-            elif 'No package katello-agent available'.encode() in logs:
-                rm_container(client, containers, 'katello-agent not found.')
+            elif "No package katello-agent available".encode() in logs:
+                rm_container(client, containers, "katello-agent not found.")
         else:
-            if 'No package katello-agent available'.encode() in logs:
-                rm_container(client, containers, 'katello-agent not found.')
-            elif 'no enabled repos'.encode() in logs:
+            if "No package katello-agent available".encode() in logs:
+                rm_container(client, containers, "katello-agent not found.")
+            elif "no enabled repos".encode() in logs:
                 rm_container(
                     client,
                     containers,
-                    'No repos enabled. Check registration/subscription status.',
+                    "No repos enabled. Check registration/subscription status.",
                 )
-            elif time.time() - containers[0].get('delay', time.time()) >= criteria:
+            elif time.time() - containers[0].get("delay", time.time()) >= criteria:
                 rm_container(client, containers)
-            elif not containers[0].get('delay', False) and 'Complete!'.encode() in logs:
-                containers[0]['delay'] = time.time()
+            elif not containers[0].get("delay", False) and "Complete!".encode() in logs:
+                containers[0]["delay"] = time.time()
             elif (
-                client.inspect_container(containers[0]['container']['Id'])['State'][
-                    'Status'
+                client.inspect_container(containers[0]["container"]["Id"])["State"][
+                    "Status"
                 ]
-                != u'running'
+                != u"running"
             ):
                 rm_container(client, containers)
 
 
 def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, guests):
     virt_data, guest_list = gen_json(hypervisors, guests)
-    with open('/tmp/temp.json', 'w') as f:
+    with open("/tmp/temp.json", "w") as f:
         json.dump(virt_data, f)
-    client = docker.Client(version='1.22')
-    temphost = 'meeseeks-{}'.format(str(uuid.uuid4()))
+    client = docker.Client(version="1.22")
+    temphost = "meeseeks-{}".format(str(uuid.uuid4()))
     logging.info(
         "Submitting virt-who report. Note: this will create a host: '{}'.".format(
             temphost
         )
     )
-    client.pull('jacobcallahan/genvirt')
+    client.pull("jacobcallahan/genvirt")
     container = client.create_container(
-        image='jacobcallahan/genvirt',
+        image="jacobcallahan/genvirt",
         hostname=temphost,
         detach=False,
         environment=env_vars,
-        volumes='/tmp/temp.json',
+        volumes="/tmp/temp.json",
         host_config=client.create_host_config(
-            binds={'/tmp/temp.json': {'bind': '/tmp/temp.json', 'mode': 'ro'}}
+            binds={"/tmp/temp.json": {"bind": "/tmp/temp.json", "mode": "ro"}}
         ),
     )
     client.start(container=container, network_mode=network_mode)
-    while 'Done!'.encode() not in client.logs(container):
+    while "Done!".encode() not in client.logs(container):
         time.sleep(2)
     client.remove_container(container, v=True, force=True)
-    os.remove('/tmp/temp.json')
+    os.remove("/tmp/temp.json")
     if sys.version_info.major < 3:
         _ = raw_input("Pausing for you to attach subscriptions to the new hypervisors.")
     else:
@@ -164,43 +166,43 @@ def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, gue
     while guest_list or active_hosts:
         if guest_list and len(active_hosts) < limit:
             guest = guest_list.pop(0)
-            hostname = '{}{}'.format(name, guest.split('-')[4])
+            hostname = "{}{}".format(name, guest.split("-")[4])
             container = client.create_container(
-                image='{0}:{1}'.format(image, tag),
+                image="{0}:{1}".format(image, tag),
                 hostname=hostname,
                 detach=False,
-                environment=merge_dicts(env_vars, {'UUID': guest}),
+                environment=merge_dicts(env_vars, {"UUID": guest}),
             )
-            active_hosts.append({'container': container, 'name': hostname})
+            active_hosts.append({"container": container, "name": hostname})
             client.start(container=container, network_mode=network_mode)
             logging.info(
-                'Created Guest: {}. {} left in queue.'.format(hostname, len(guest_list))
+                "Created Guest: {}. {} left in queue.".format(hostname, len(guest_list))
             )
 
-        logs = client.logs(active_hosts[0]['container']['Id'])
+        logs = client.logs(active_hosts[0]["container"]["Id"])
         # We'll wait for 30 seconds after attempting to auto-attach
-        if 'no enabled repos'.encode() in logs:
+        if "no enabled repos".encode() in logs:
             rm_container(client, active_hosts)
-        elif 'No package katello-agent available'.encode() in logs:
+        elif "No package katello-agent available".encode() in logs:
             rm_container(client, active_hosts)
-        elif time.time() - active_hosts[0].get('delay', time.time()) >= 30:
+        elif time.time() - active_hosts[0].get("delay", time.time()) >= 30:
             rm_container(client, active_hosts)
-        elif not active_hosts[0].get('delay', False) and 'auto-attach'.encode() in logs:
-            active_hosts[0]['delay'] = time.time()
+        elif not active_hosts[0].get("delay", False) and "auto-attach".encode() in logs:
+            active_hosts[0]["delay"] = time.time()
         elif (
-            client.inspect_container(active_hosts[0]['container']['Id'])['State'][
-                'Status'
+            client.inspect_container(active_hosts[0]["container"]["Id"])["State"][
+                "Status"
             ]
-            != u'running'
+            != u"running"
         ):
             rm_container(client, active_hosts)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(
-        filename='flood.log',
-        format='[%(levelname)s %(asctime)s] %(message)s',
-        datefmt='%m-%d-%Y %I:%M:%S',
+        filename="flood.log",
+        format="[%(levelname)s %(asctime)s] %(message)s",
+        datefmt="%m-%d-%Y %I:%M:%S",
         level=logging.INFO,
     )
     parser = argparse.ArgumentParser()
@@ -302,10 +304,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.exit_criteria:
-        if 'reg' in args.exit_criteria:
-            criteria = 'reg'
-        elif 'age' in args.exit_criteria:
-            criteria = 'age'
+        if "reg" in args.exit_criteria:
+            criteria = "reg"
+        elif "age" in args.exit_criteria:
+            criteria = "age"
         else:
             try:
                 criteria = int(args.exit_criteria)
@@ -315,22 +317,29 @@ if __name__ == '__main__':
         criteria = 60
 
     # gather our environmental variables to pass to the containers
-    env_vars = {'SATHOST': args.satellite}
+    env_vars = {"SATHOST": args.satellite}
     if args.key:
-        env_vars['AK'] = args.key
+        env_vars["AK"] = args.key
     if args.organization:
-        env_vars['ORG'] = args.organization
+        env_vars["ORG"] = args.organization
     if args.environment:
-        env_vars['ENV'] = args.environment
+        env_vars["ENV"] = args.environment
     if args.auth:
-        env_vars['AUTH'] = args.auth
+        env_vars["AUTH"] = args.auth
 
     if args.hypervisors:
         logging.info("Starting population of hypervisor(s) and guest(s)")
-        tag = 'guest' if not args.tag else args.tag
+        tag = "guest" if not args.tag else args.tag
         guests = 5 if not args.guests else args.guests
         virt_flood(
-            tag, args.limit, args.image, args.name, env_vars, args.network_mode, args.hypervisors, guests
+            tag,
+            args.limit,
+            args.image,
+            args.name,
+            env_vars,
+            args.network_mode,
+            args.hypervisors,
+            guests,
         )
     else:
         logging.info(
@@ -348,3 +357,4 @@ if __name__ == '__main__':
             args.rhsm_log_dir,
         )
     logging.info("Finished content host creation.")
+
