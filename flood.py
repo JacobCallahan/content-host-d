@@ -1,8 +1,57 @@
 #!/usr/bin/python
 import argparse, json, os, sys, time, uuid
 from collections import deque
-import docker
 import logging
+
+try:
+    from lib.podman import PodmanContainer as ContainerImpl
+except ImportError:
+    from lib.docker import DockerContainer as ContainerImpl
+
+
+class Container(ContainerImpl):
+    def __init__(self, *, image, tag, hostname, env_vars, criteria=None, network_mode, binds=[], command=None):
+        self.image = image
+        self.tag = tag
+        self.hostname = hostname
+        self.env_vars = env_vars
+        self.network_mode = network_mode
+        self.binds = binds
+        self.command = command
+        self.expiry = 0
+        self.criteria = criteria
+        self._ctr = self.get_container()
+        super().__init__()
+
+    def _parse_binds(self):
+        return list(map(lambda b: '{}:{}:{}'.format(b['host_path'], b['container_path'], b['mode']), self.binds))
+
+    def get_result(self):
+        result = None
+        if self.criteria == 'reg':
+            if self.search_logs('system has been registered'):
+                result = 'Registration complete'
+            elif self.search_logs('no enabled repos'):
+                result = 'No repos enabled. Check registration/subscription status.'
+        elif self.criteria == 'age':
+            if self.search_logs('Complete!'):
+                result = 'Success'
+            if self.search_logs('no enabled repos'):
+                result = 'No repos enabled. Check registration/subscription status.'
+            elif self.search_logs('No package katello-agent available'):
+                result = 'katello-agent not found.'
+        else:
+            if self.search_logs('No package katello-agent available'):
+                result = 'katello-agent not found.'
+            elif self.search_logs('no enabled repos'):
+                result = 'No repos enabled. Check registration/subscription status.'
+            elif 0 < self.expiry < time.time():
+                result = 'Time elapsed'
+            elif self.expiry == 0 and self.search_logs('system has been registered'):
+                self.expiry = time.time() + self.criteria
+            elif not self.running():
+                result = 'Container not running'
+        return result
 
 
 def merge_dicts(dict1, dict2):
@@ -30,26 +79,22 @@ def gen_json(hypervisors, guests):
     return (virtwho, all_guest_list)
 
 
-def rm_container(client, containers, reason="Success"):
-    del_container = containers[0]
+def rm_container(container, reason):
     with open("container.log", "a") as log:
         log.write(
             "***********************************{0}****************************\n".format(
-                del_container['name']
+                container.hostname
             )
         )
-        log.write(client.logs(del_container['container']['Id']))
-    client.remove_container(del_container['container'], v=True, force=True)
-    del containers[0]
-    logging.info('Done with {0}: {1}'.format(del_container['name'], reason))
+        for clog in container.get_logs():
+            log.write(clog)
+    container.destroy()
+    logging.info('Done with {0}: {1}'.format(container.hostname, reason))
 
 
 def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria, rhsm_log_dir):
-    client = docker.Client(version='1.22')  # docker.from_env()
-    num = 1
+    num = 0
     containers = deque()
-    # create our base volume bind
-    binds = {'/dev/log': {'bind': '/dev/log', 'mode': 'rw'}}
     # allow for local storage of rhsm logs
     if rhsm_log_dir:
         rhsm_log_dir = '' if rhsm_log_dir == '.' else rhsm_log_dir
@@ -59,100 +104,61 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
             os.makedirs(rhsm_log_dir)
 
     while num < count or containers:
-        if len(containers) < limit and num <= count:  # check if queue is full
-            local_file = None
+        if len(containers) < limit and num < count:  # check if queue is full
+            # send container logs to host's journal
+            binds = [{'container_path': '/dev/log', 'host_path': '/dev/log', 'mode': 'rw'}]
             if rhsm_log_dir:
                 # create our log bind
                 local_file = '{}/{}{}.log'.format(rhsm_log_dir, name, num)
                 with open(local_file, 'w'):
                     pass
-                binds[local_file] = {'bind': '/var/log/rhsm/rhsm.log', 'mode': 'rw'}
+                binds.append({'container_path': '/var/log/rhsm/rhsm.log', 'host_path': local_file, 'mode': 'rw'})
+
             hostname = '{0}{1}'.format(name, num)
-            container = client.create_container(
-                image='{0}:{1}'.format(image, tag),
-                hostname=hostname,
-                detach=False,
-                environment=env_vars,
-                host_config=client.create_host_config(binds=binds),
-            )
-            # destroy the bind for this host, for the next one
-            if binds.get(local_file or None):
-                del binds[local_file]
-            containers.append({'container': container, 'name': hostname})
-            client.start(container=container, network_mode=network_mode)
+            container = Container(
+                    image=image,
+                    tag=tag,
+                    hostname=hostname,
+                    env_vars=env_vars,
+                    criteria=criteria,
+                    network_mode=network_mode,
+                    binds=binds
+                )
+            containers.append(container)
+            container.start()
             logging.info('Created: {0}'.format(hostname))
             num += 1
 
-        logs = client.logs(containers[0]['container']['Id'])
+        container = containers[0]
 
-        if criteria == 'reg':
-            if 'system has been registered'.encode() in logs:
-                rm_container(client, containers)
-            elif 'no enabled repos'.encode() in logs:
-                rm_container(
-                    client,
-                    containers,
-                    'No repos enabled. Check registration/subscription status.',
-                )
-        elif criteria == 'age':
-            if 'Complete!'.encode() in logs:
-                rm_container(client, containers)
-            elif 'no enabled repos'.encode() in logs:
-                rm_container(
-                    client,
-                    containers,
-                    'No repos enabled. Check registration/subscription status.',
-                )
-            elif 'No package katello-agent available'.encode() in logs:
-                rm_container(client, containers, 'katello-agent not found.')
-        else:
-            if 'No package katello-agent available'.encode() in logs:
-                rm_container(client, containers, 'katello-agent not found.')
-            elif 'no enabled repos'.encode() in logs:
-                rm_container(
-                    client,
-                    containers,
-                    'No repos enabled. Check registration/subscription status.',
-                )
-            elif time.time() - containers[0].get('delay', time.time()) >= criteria:
-                rm_container(client, containers)
-            elif not containers[0].get('delay', False) and 'Complete!'.encode() in logs:
-                containers[0]['delay'] = time.time()
-            elif (
-                client.inspect_container(containers[0]['container']['Id'])['State'][
-                    'Status'
-                ]
-                != u'running'
-            ):
-                rm_container(client, containers)
+        result = container.get_result()
+        if result:
+            rm_container(containers.pop(), result)
 
 
-def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, guests):
+def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hypervisors, guests):
     virt_data, guest_list = gen_json(hypervisors, guests)
     with open('/tmp/temp.json', 'w') as f:
         json.dump(virt_data, f)
-    client = docker.Client(version='1.22')
     temphost = 'meeseeks-{}'.format(str(uuid.uuid4()))
     logging.info(
         "Submitting virt-who report. Note: this will create a host: '{}'.".format(
             temphost
         )
     )
-    client.pull('jacobcallahan/genvirt')
-    container = client.create_container(
+    container = Container(
         image='jacobcallahan/genvirt',
+        tag='latest',
         hostname=temphost,
-        detach=False,
-        environment=env_vars,
-        volumes='/tmp/temp.json',
-        host_config=client.create_host_config(
-            binds={'/tmp/temp.json': {'bind': '/tmp/temp.json', 'mode': 'ro'}}
-        ),
+        env_vars=env_vars,
+        binds=[{'container_path': '/tmp/temp.json', 'host_path': '/tmp/temp.json', 'mode': 'ro'}],
+        network_mode=network_mode,
+        command='/tmp/startup.sh',
     )
-    client.start(container=container, network_mode=network_mode)
-    while 'Done!'.encode() not in client.logs(container):
+    container.start()
+    while not container.search_logs('Done!'):
         time.sleep(2)
-    client.remove_container(container, v=True, force=True)
+    container.destroy()
     os.remove('/tmp/temp.json')
     if sys.version_info.major < 3:
         _ = raw_input("Pausing for you to attach subscriptions to the new hypervisors.")
@@ -165,43 +171,33 @@ def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, gue
         if guest_list and len(active_hosts) < limit:
             guest = guest_list.pop(0)
             hostname = '{}{}'.format(name, guest.split('-')[4])
-            container = client.create_container(
-                image='{0}:{1}'.format(image, tag),
+            container = Container(
+                image=image,
+                tag=tag,
+                criteria=criteria,
+                network_mode=network_mode,
                 hostname=hostname,
-                detach=False,
-                environment=merge_dicts(env_vars, {'UUID': guest}),
+                env_vars=merge_dicts(env_vars, {'UUID': guest}),
             )
-            active_hosts.append({'container': container, 'name': hostname})
-            client.start(container=container, network_mode=network_mode)
+            active_hosts.append(container)
+            container.start()
             logging.info(
                 'Created Guest: {}. {} left in queue.'.format(hostname, len(guest_list))
             )
 
-        logs = client.logs(active_hosts[0]['container']['Id'])
-        # We'll wait for 30 seconds after attempting to auto-attach
-        if 'no enabled repos'.encode() in logs:
-            rm_container(client, active_hosts)
-        elif 'No package katello-agent available'.encode() in logs:
-            rm_container(client, active_hosts)
-        elif time.time() - active_hosts[0].get('delay', time.time()) >= 30:
-            rm_container(client, active_hosts)
-        elif not active_hosts[0].get('delay', False) and 'auto-attach'.encode() in logs:
-            active_hosts[0]['delay'] = time.time()
-        elif (
-            client.inspect_container(active_hosts[0]['container']['Id'])['State'][
-                'Status'
-            ]
-            != u'running'
-        ):
-            rm_container(client, active_hosts)
+        container = active_hosts[0]
+
+        result = container.get_result()
+        if result:
+            rm_container(active_hosts.pop(), result)
 
 
 if __name__ == '__main__':
     logging.basicConfig(
-        filename='flood.log',
+        #filename='flood.log',
         format='[%(levelname)s %(asctime)s] %(message)s',
         datefmt='%m-%d-%Y %I:%M:%S',
-        level=logging.INFO,
+        level=logging.DEBUG,
     )
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -267,7 +263,7 @@ if __name__ == '__main__':
         "--count",
         type=int,
         default=10,
-        help="The number of docker content hosts to create.",
+        help="The number of content hosts to create.",
     )
     parser.add_argument(
         "--hypervisors",
@@ -285,7 +281,7 @@ if __name__ == '__main__':
         "--limit",
         type=int,
         default=1000,
-        help="The maximum number of simultaneous docker content hosts.",
+        help="The maximum number of simultaneous content hosts.",
     )
     parser.add_argument(
         "--exit-criteria",
@@ -330,7 +326,7 @@ if __name__ == '__main__':
         tag = 'guest' if not args.tag else args.tag
         guests = 5 if not args.guests else args.guests
         virt_flood(
-            tag, args.limit, args.image, args.name, env_vars, args.network_mode, args.hypervisors, guests
+            tag, args.limit, args.image, args.name, criteria, env_vars, args.network_mode, args.hypervisors, guests
         )
     else:
         logging.info(

@@ -1,5 +1,7 @@
 # content-host-d
-A Docker-ized Centos Content Host for Red Hat Satellite 6
+Containerized Content Hosts for Red Hat Satellite 6
+
+Supports Podman and Docker container engines.
 
 Current automated tags are: centos5, centos6, centos7, sles11, sles12, opensuse
 
@@ -50,7 +52,7 @@ Examples
 
 Flood Script
 ------------
-This repo also contains a flood.py helper script to orchestrate container creation and deletion. You will need python and docker-py (via pip) installed locally.
+This repo also contains a flood.py helper script to orchestrate container creation and deletion. You will need podman or docker-py (via pip) installed locally depending on which container engine you are using.
 
 See ```python flood.py -h``` for usage.
 
