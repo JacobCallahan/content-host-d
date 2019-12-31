@@ -20,8 +20,9 @@ class Container(ContainerImpl):
         self.command = command
         self.expiry = 0
         self.criteria = criteria
-        self._ctr = self.get_container()
+
         super().__init__()
+        self._ctr = self.get_container()
 
     def _parse_binds(self):
         return list(map(lambda b: '{}:{}:{}'.format(b['host_path'], b['container_path'], b['mode']), self.binds))
@@ -194,10 +195,10 @@ def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hyperv
 
 if __name__ == '__main__':
     logging.basicConfig(
-        #filename='flood.log',
+        filename='flood.log',
         format='[%(levelname)s %(asctime)s] %(message)s',
         datefmt='%m-%d-%Y %I:%M:%S',
-        level=logging.DEBUG,
+        level=logging.INFO,
     )
     parser = argparse.ArgumentParser()
     parser.add_argument(
