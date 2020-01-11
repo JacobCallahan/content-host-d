@@ -80,7 +80,14 @@ def gen_json(hypervisors, guests):
     return (virtwho, all_guest_list)
 
 
-def rm_container(container, reason):
+def handle_containers(containers):
+    container = containers.popleft()
+
+    result = container.get_result()
+    if result is None:
+        containers.append(container)
+        return
+
     with open("container.log", "a") as log:
         log.write(
             "***********************************{0}****************************\n".format(
@@ -89,8 +96,9 @@ def rm_container(container, reason):
         )
         for clog in container.get_logs():
             log.write(clog)
+
     container.destroy()
-    logging.info('Done with {0}: {1}'.format(container.hostname, reason))
+    logging.info('Done with {0}: {1}'.format(container.hostname, result))
 
 
 def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria, rhsm_log_dir):
@@ -129,12 +137,7 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
             logging.info('Created: {0}'.format(hostname))
             num += 1
 
-        container = containers.popleft()
-        result = container.get_result()
-        if result:
-            rm_container(container, result)
-        else:
-            containers.append(container)
+        handle_containers(containers)
 
 
 def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hypervisors, guests):
@@ -167,7 +170,7 @@ def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hyperv
         _ = input("Pausing for you to attach subscriptions to the new hypervisors.")
 
     logging.info("Starting guest creation.")
-    active_hosts = []
+    active_hosts = deque()
     while guest_list or active_hosts:
         if guest_list and len(active_hosts) < limit:
             guest = guest_list.pop(0)
@@ -186,12 +189,7 @@ def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hyperv
                 'Created Guest: {}. {} left in queue.'.format(hostname, len(guest_list))
             )
 
-        container = active_hosts.popleft()
-        result = container.get_result()
-        if result:
-            rm_container(container, result)
-        else:
-            active_hosts.append(container)
+        handle_containers(active_hosts)
 
 
 if __name__ == '__main__':
