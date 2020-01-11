@@ -109,7 +109,6 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
             # send container logs to host's journal
             binds = [{'container_path': '/dev/log', 'host_path': '/dev/log', 'mode': 'rw'}]
             if rhsm_log_dir:
-                # create our log bind
                 local_file = '{}/{}{}.log'.format(rhsm_log_dir, name, num)
                 with open(local_file, 'w'):
                     pass
@@ -130,11 +129,12 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
             logging.info('Created: {0}'.format(hostname))
             num += 1
 
-        container = containers[0]
-
+        container = containers.popleft()
         result = container.get_result()
         if result:
-            rm_container(containers.pop(), result)
+            rm_container(container, result)
+        else:
+            containers.append(container)
 
 
 def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hypervisors, guests):
@@ -186,11 +186,12 @@ def virt_flood(tag, limit, image, name, criteria, env_vars, network_mode, hyperv
                 'Created Guest: {}. {} left in queue.'.format(hostname, len(guest_list))
             )
 
-        container = active_hosts[0]
-
+        container = active_hosts.popleft()
         result = container.get_result()
         if result:
-            rm_container(active_hosts.pop(), result)
+            rm_container(container, result)
+        else:
+            active_hosts.append(container)
 
 
 if __name__ == '__main__':
