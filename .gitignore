@@ -1,2 +1,4 @@
 flood.log
 container.log
+logs/
+**/__pycache__
