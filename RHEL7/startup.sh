@@ -39,6 +39,9 @@ else
     subscription-manager register --org="$ORG" --environment="Library" $AUTH
 fi
 
+# Workaround for BZ#1958220
+subscription-manager attach --auto
+
 # Install katello agent
 yum -y install katello-agent
 
