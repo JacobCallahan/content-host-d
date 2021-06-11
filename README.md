@@ -21,12 +21,12 @@ Accepted Arguments
 ------------------
 -e  (e.g. ```-e "SATHOST=my.hostname.domain.com"```)
  * AK - Name of the Activation Key to use.
- * AUTH - Satellite username and password. (AUTH=username/password)
+ * AUTH - Satellite user name and password. (AUTH=username/password)
  * ENV - Name of the Environment to use.
- * KILL - If this is not passed, then the container will be kept alive and goferd running.
- * ORG - Name of the Organization to use.
- * SATHOST(Required) - Hostname of the Satellite (not url).
- * LOCAL - IP Address of the Satellite Server when we are not able to retrieve the correct info via DNS.
+ * KILL - A flag to terminate the container. If not passed, the container is left alive and goferd running.
+ * ORG - The label of the Organization to use.
+ * SATHOST (Required) - Host name of the Satellite (FQDN not a URL).
+ * LOCAL - IP Address of the Satellite Server when this cannot be retrievied using DNS.
 
 Note
 ----
