@@ -27,7 +27,7 @@ fi
 
 # Register to the sat if an activation key specified
 if [ -n "$AK" ]; then
-    echo "Activation key $AK found. Registering..."
+    echo "Activation key $AK specified. Registering..."
     subscription-manager register --org="$ORG" --activationkey="$AK"
 # If an environment is otherwise specified, use it
 elif [ -n "$ENV" ]; then
@@ -44,6 +44,5 @@ yum -y install katello-agent
 
 # if the KILL arg was not passed, then keep the container running
 if [ -z "$KILL" ]; then
-    echo "Tailing rhsm.log."
-    tail -f /var/log/rhsm/rhsm.log || tail -f /dev/null
+    tail -f /var/log/messages || tail -f /dev/null
 fi
