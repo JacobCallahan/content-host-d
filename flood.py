@@ -4,6 +4,8 @@ from collections import deque
 import docker
 import logging
 
+logger = logging.getLogger('flood')
+
 
 def merge_dicts(dict1, dict2):
     res = dict1.copy()
@@ -41,7 +43,7 @@ def rm_container(client, containers, reason="Success"):
         log.write(client.logs(del_container['container']['Id']).decode())
     client.remove_container(del_container['container'], v=True, force=True)
     del containers[0]
-    logging.info('Done with {0}: {1}'.format(del_container['name'], reason))
+    logger.info('Done with {0}: {1}'.format(del_container['name'], reason))
 
 
 def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria, rhsm_log_dir):
@@ -80,7 +82,7 @@ def host_flood(count, tag, name, env_vars, limit, image, network_mode, criteria,
                 del binds[local_file]
             containers.append({'container': container, 'name': hostname})
             client.start(container=container, network_mode=network_mode)
-            logging.info('Created: {0}'.format(hostname))
+            logger.info('Created: {0}'.format(hostname))
             num += 1
 
         logs = client.logs(containers[0]['container']['Id'])
@@ -133,14 +135,14 @@ def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, gue
         json.dump(virt_data, f)
     client = docker.Client(version='1.22')
     temphost = 'meeseeks-{}'.format(str(uuid.uuid4()))
-    logging.info(
+    logger.info(
         "Submitting virt-who report. Note: this will create a host: '{}'.".format(
             temphost
         )
     )
-    client.pull('jacobcallahan/genvirt')
+    client.pull('jacobcallahan/genvirt:async')
     container = client.create_container(
-        image='jacobcallahan/genvirt',
+        image='jacobcallahan/genvirt:async',
         hostname=temphost,
         detach=False,
         environment=env_vars,
@@ -159,7 +161,7 @@ def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, gue
     else:
         _ = input("Pausing for you to attach subscriptions to the new hypervisors.")
 
-    logging.info("Starting guest creation.")
+    logger.info("Starting guest creation.")
     active_hosts = []
     while guest_list or active_hosts:
         if guest_list and len(active_hosts) < limit:
@@ -173,7 +175,7 @@ def virt_flood(tag, limit, image, name, env_vars, network_mode, hypervisors, gue
             )
             active_hosts.append({'container': container, 'name': hostname})
             client.start(container=container, network_mode=network_mode)
-            logging.info(
+            logger.info(
                 'Created Guest: {}. {} left in queue.'.format(hostname, len(guest_list))
             )
 
@@ -326,14 +328,14 @@ if __name__ == '__main__':
         env_vars['AUTH'] = args.auth
 
     if args.hypervisors:
-        logging.info("Starting population of hypervisor(s) and guest(s)")
+        logger.info("Starting population of hypervisor(s) and guest(s)")
         tag = 'guest' if not args.tag else args.tag
         guests = 5 if not args.guests else args.guests
         virt_flood(
             tag, args.limit, args.image, args.name, env_vars, args.network_mode, args.hypervisors, guests
         )
     else:
-        logging.info(
+        logger.info(
             "Starting content host creation with criteria {}.".format(criteria)
         )
         host_flood(
@@ -347,4 +349,4 @@ if __name__ == '__main__':
             criteria,
             args.rhsm_log_dir,
         )
-    logging.info("Finished content host creation.")
+    logger.info("Finished content host creation.")
