@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/rhel6.9
+FROM registry.access.redhat.com/rhel6.10
 MAINTAINER https://github.com/JacobCallahan
 LABEL broker_compatible="True"
 
