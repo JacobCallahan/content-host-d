@@ -13,6 +13,14 @@ or specify a directory and build the image manually
 
 ```docker build -t ch-d:sles11 SLES11/.```
 
+Certain dockerfiles (currently only `UBI` and `RHEL6`) support including of additional files and setup scripts by adding them to
+their respective directories (`resources`, `setup_scripts`). The setup scripts are executed in alphabetical order
+so it is possible to control the execution order by naming them accordingly.
+
+Note: `resources/startup.sh` is reserved and it is used as the entrypoint.
+
+
+
 Usage
 -----
 ```docker run <arguments> jacobcallahan/content-host-d:<tag>```

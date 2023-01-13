@@ -8,8 +8,13 @@ WORKDIR /root
 RUN sed -i -e 's/os.path.exists(HOST_CONFIG_DIR)/False/g' /usr/lib64/python2.6/site-packages/rhsm/config.py
 RUN echo "{\"virt.host_type\": \"Not Applicable\", \"virt.is_guest\": \"False\"}" > /etc/rhsm/facts/custom.facts
 
-ADD startup.sh /tmp/
-RUN chmod +x /tmp/startup.sh
+# add and process the external resources
+ADD resources/* /tmp/
+ADD setup_scripts/* /tmp/setup_scripts/
+
+WORKDIR /tmp
+RUN chmod +x *.sh setup_scripts/*.sh || true
+RUN for i in `ls setup_scripts/*.sh`; do bash $i; done
 
 EXPOSE 22
 
