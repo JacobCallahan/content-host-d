@@ -1,0 +1,2 @@
+Placeholder file so the `ADD setup_scripts/*` does not fail if the dir is empty.
+Workaround of https://github.com/moby/moby/issues/13045
