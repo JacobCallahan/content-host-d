@@ -15,6 +15,7 @@ ADD setup_scripts/* /tmp/setup_scripts/
 WORKDIR /tmp
 RUN chmod +x *.sh setup_scripts/*.sh
 RUN for i in `ls setup_scripts/*.sh`; do bash $i; done
+WORKDIR /root
 
 EXPOSE 22
 
