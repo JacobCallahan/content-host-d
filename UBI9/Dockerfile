@@ -6,6 +6,7 @@ ENV HOME /root
 ENV SMDEV_CONTAINER_OFF True
 WORKDIR /root
 
+RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host
 RUN echo "{\"virt.host_type\": \"Not Applicable\", \"virt.is_guest\": \"False\"}" > /etc/rhsm/facts/custom.facts
 
 # add and process the external resources

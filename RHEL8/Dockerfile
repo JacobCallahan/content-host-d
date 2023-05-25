@@ -4,7 +4,7 @@ MAINTAINER https://github.com/JacobCallahan
 ENV HOME /root
 WORKDIR /root
 
-RUN sed -i -e 's/os.path.exists(HOST_CONFIG_DIR)/False/g' /usr/lib64/python3.6/site-packages/rhsm/config.py
+RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host
 RUN echo "{\"virt.host_type\": \"Not Applicable\", \"virt.is_guest\": \"False\"}" > /etc/rhsm/facts/custom.facts
 RUN echo -e "\nexport LC_ALL=C\nexport LANG=C\n" >> .bashrc
 ADD startup.sh /tmp/
