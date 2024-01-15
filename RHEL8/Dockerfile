@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/rhel8-beta 
+FROM registry.access.redhat.com/ubi8
 MAINTAINER https://github.com/JacobCallahan
 
 ENV HOME /root
