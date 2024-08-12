@@ -3,7 +3,6 @@ MAINTAINER https://github.com/JacobCallahan
 LABEL broker_compatible="True"
 
 ENV HOME /root
-ENV SMDEV_CONTAINER_OFF True
 WORKDIR /root
 
 RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host
