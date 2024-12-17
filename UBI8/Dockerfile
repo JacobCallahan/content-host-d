@@ -17,6 +17,9 @@ RUN chmod +x *.sh setup_scripts/*.sh
 RUN for i in `ls setup_scripts/*.sh`; do bash $i; done
 WORKDIR /root
 
+RUN sed -i 's/enabled = 1/enabled = 0/g' /etc/yum.repos.d/ubi.repo
+RUN dnf clean all
+
 EXPOSE 22
 
 CMD /tmp/startup.sh

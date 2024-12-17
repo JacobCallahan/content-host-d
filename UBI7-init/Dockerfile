@@ -22,7 +22,8 @@ RUN chmod +x setup_scripts/*.sh
 RUN for i in `ls setup_scripts/*.sh`; do bash $i; done
 WORKDIR /root
 
-RUN yum clean all
+RUN sed -i 's/enabled = 1/enabled = 0/g' /etc/yum.repos.d/ubi.repo
+RUN yum clean all || true
 
 EXPOSE 22
 
