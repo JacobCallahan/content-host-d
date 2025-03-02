@@ -1,9 +1,6 @@
-cd ~/content-host-d
-git fetch origin
-git checkout master
-git reset --hard origin/master
+REPO_DIR=${REPO_DIR:-~/content-host-d}
 
-# Determine if Docker or Podman is available
+# Determine if Docker or Podman is available.
 if command -v docker &> /dev/null; then
     CONTAINER_CMD="docker"
 elif command -v podman &> /dev/null; then
@@ -13,14 +10,40 @@ else
     exit 1
 fi
 
+# Validate arguments were passed and REPO_DIR exists.
+if [[ -z ${@} ]]; then
+    echo "No build targets specified. Exiting."
+    exit 1
+elif [[ ! -d ${REPO_DIR} ]]; then
+    echo "Directory ${REPO_DIR} could not be found. Exiting."
+    exit 1
+fi
+
+cd ${REPO_DIR}
+git fetch origin
+git checkout master
+git reset --hard origin/master
+git clean -f
+
 for var in "${@}"
 do
-    cp -r resources ~/content-host-d/${var}
-    cp -r setup_scripts ~/content-host-d/${var}
-    $CONTAINER_CMD build -t ${var,,} ~/content-host-d/${var}
-done
+    # Verify that the build target folder exists.
+    if [[ ! -d ${var} ]]; then
+        echo "Target ${var} not found. Skipping."
+        continue
+    fi
 
-echo "------------- Cleaning up after $CONTAINER_CMD -------------"
-$CONTAINER_CMD rm -v $($CONTAINER_CMD ps -q -f "status=exited")
-$CONTAINER_CMD volume rm $($CONTAINER_CMD volume ls -f dangling=true -q)
-$CONTAINER_CMD rmi $($CONTAINER_CMD images -f "dangling=true" -q)
+    # Copy any user-provided files to the build target folder.
+    [[ -d resources ]] && cp -r resources ${var}
+    [[ -d setup_scripts ]] && cp -r setup_scripts ${var}
+
+    BUILD_CMD="${CONTAINER_CMD} build ${var} -t ${var,,}"
+
+    # Pass ROOT_PASSWD to UBI*-init images if set.
+    [[ ${var} =~ -init ]] && [[ -v ROOT_PASSWD ]] && BUILD_CMD+=" --build-arg ROOT_PASSWD=${ROOT_PASSWD}"
+
+    # Use cgroup v1 for UBI7-init images.
+	[[ ${var,,} == ubi7-init ]] && BUILD_CMD+=" --annotation 'run.oci.systemd.force_cgroup_v1=/sys/fs/cgroup'"
+
+    ${BUILD_CMD}
+done
