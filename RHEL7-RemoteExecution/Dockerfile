@@ -1,8 +1,5 @@
 FROM registry.access.redhat.com/rhel7.7
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 RUN yum install -y openssh-server
 RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host

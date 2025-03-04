@@ -1,4 +1,6 @@
+#!/bin/bash
 mkdir host_tools
+# shellcheck disable=SC2164
 cd host_tools
 for pkg in "gofer-2.7.6-1.el7.noarch.rpm" \
     "katello-client-repos-3.5.1-1.el7.noarch.rpm" \

@@ -1,8 +1,5 @@
 FROM jacobcallahan/sles:12
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 ADD startup.sh /tmp/
 ADD install-tools.sh /tmp/

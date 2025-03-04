@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Adding the local entry on /etc/hosts
 if [ -n "$LOCAL" ]; then
@@ -19,7 +19,7 @@ if [ -n "$AUTH" ]; then
     IFS="/" read -r UNAME PWORD <<< "$AUTH"
     AUTH="--username=$UNAME --password=$PWORD"
 else
-    AUTH="--username="admin" --password="changeme""
+    AUTH="--username=admin --password=changeme"
 fi
 
 # Set the organization to default, if not provided
@@ -34,11 +34,11 @@ if [ -n "$AK" ]; then
 # If an environment is otherwise specified, use it
 elif [ -n "$ENV" ]; then
     echo "Environment $ENV found. Registering..."
-    subscription-manager register --org="$ORG" --environment="$ENV" $AUTH
+    subscription-manager register --org="$ORG" --environment="$ENV" "$AUTH"
 # If no specifics are provided, register to the library
 else
     echo "No registration details specified. Registering to $ORG and Library..."
-    subscription-manager register --org="$ORG" --environment="Library" $AUTH
+    subscription-manager register --org="$ORG" --environment="Library" "$AUTH"
 fi
 
 # Install katello agent

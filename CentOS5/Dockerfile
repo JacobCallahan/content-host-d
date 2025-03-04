@@ -1,8 +1,5 @@
 FROM centos:5
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 ADD subman.repo /etc/yum.repos.d/
 RUN install -Dv /dev/null /var/cache/yum/base/mirrorlist.txt && \
