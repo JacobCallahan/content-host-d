@@ -1,8 +1,5 @@
 FROM registry.access.redhat.com/rhel7.4
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host
 RUN echo "{\"virt.host_type\": \"Not Applicable\", \"virt.is_guest\": \"False\"}" > /etc/rhsm/facts/custom.facts

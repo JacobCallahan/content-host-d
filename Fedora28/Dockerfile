@@ -1,8 +1,5 @@
 FROM fedora:30
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 RUN dnf install -y subscription-manager openssh-server
 RUN sleep .1 ; printf "%s\n" "dog8code" "dog8code" | passwd

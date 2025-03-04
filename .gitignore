@@ -2,3 +2,6 @@ flood.log
 container.log
 /resources/
 /setup_scripts/
+__pycache__/
+.pytest_cache
+

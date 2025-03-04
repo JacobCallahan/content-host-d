@@ -1,10 +1,8 @@
 FROM registry.access.redhat.com/ubi9-init
-MAINTAINER https://github.com/JacobCallahan
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 LABEL broker_compatible="True"
 
-ENV INIT_ENABLED 1
-ENV HOME /root
-WORKDIR /root
+ENV INIT_ENABLED=1
 
 # set root password
 ARG ROOT_PASSWD=change-me

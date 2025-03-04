@@ -1,8 +1,5 @@
 FROM centos:7
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 RUN yum install -y subscription-manager
 

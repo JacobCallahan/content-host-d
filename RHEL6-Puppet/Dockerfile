@@ -1,8 +1,5 @@
 FROM registry.access.redhat.com/rhel6.8
-MAINTAINER https://github.com/jyejare
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host
 

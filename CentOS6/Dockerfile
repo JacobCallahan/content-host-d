@@ -1,8 +1,5 @@
 FROM centos:6
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 RUN yum install -y wget
 RUN wget https://copr.fedoraproject.org/coprs/dgoodwin/subscription-manager/repo/epel-6/dgoodwin-subscription-manager-epel-6.repo -O /etc/yum.repos.d/dgoodwin-subscription-manager-epel-6.repo

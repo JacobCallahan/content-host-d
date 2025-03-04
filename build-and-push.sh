@@ -1,3 +1,4 @@
+#!/bin/bash
 REPO_DIR=${REPO_DIR:-~/content-host-d}
 
 # Determine if Docker or Podman is available.
@@ -11,7 +12,7 @@ else
 fi
 
 # Validate arguments were passed and REPO_DIR exists.
-if [[ -z ${@} ]]; then
+if [[ $# -eq 0 ]]; then
     echo "No build targets specified. Exiting."
     exit 1
 elif [[ ! -d ${REPO_DIR} ]]; then
@@ -19,6 +20,7 @@ elif [[ ! -d ${REPO_DIR} ]]; then
     exit 1
 fi
 
+# shellcheck disable=SC2164
 cd ${REPO_DIR}
 git fetch origin
 git checkout master
@@ -45,5 +47,5 @@ do
     # Use cgroup v1 for UBI7-init images.
 	[[ ${var,,} == ubi7-init ]] && BUILD_CMD+=" --annotation 'run.oci.systemd.force_cgroup_v1=/sys/fs/cgroup'"
 
-    ${BUILD_CMD}
+    eval ${BUILD_CMD}
 done

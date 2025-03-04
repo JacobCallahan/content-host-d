@@ -1,9 +1,6 @@
 FROM registry.access.redhat.com/ubi8/ubi
-MAINTAINER https://github.com/JacobCallahan
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 LABEL broker_compatible="True"
-
-ENV HOME /root
-WORKDIR /root
 
 RUN rm -f /etc/rhsm-host /etc/pki/entitlement-host
 RUN echo "{\"virt.host_type\": \"Not Applicable\", \"virt.is_guest\": \"False\"}" > /etc/rhsm/facts/custom.facts

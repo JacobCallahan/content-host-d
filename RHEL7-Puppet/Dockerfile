@@ -1,8 +1,5 @@
 FROM registry.access.redhat.com/rhel7.4
-MAINTAINER https://github.com/JacobCallahan
-
-ENV HOME /root
-WORKDIR /root
+LABEL org.opencontainers.image.authors="https://github.com/JacobCallahan"
 
 # RUN sleep .1 ; printf "%s\n" "dog8code" "dog8code" | passwd
 # RUN sed -ri 's/UsePAM yes/#UsePAM yes/g' /etc/ssh/sshd_config
