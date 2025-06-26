@@ -47,5 +47,8 @@ do
     # Use cgroup v1 for UBI7-init images.
 	[[ ${var,,} == ubi7-init ]] && BUILD_CMD+=" --annotation 'run.oci.systemd.force_cgroup_v1=/sys/fs/cgroup'"
 
+    # Use proxy if set.
+    [[ -v HTTPS_PROXY ]] && BUILD_CMD+=" --env=HTTPS_PROXY=${HTTPS_PROXY} --net host"
+
     eval ${BUILD_CMD}
 done
