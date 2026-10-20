@@ -4,8 +4,10 @@ REPO_DIR=${REPO_DIR:-~/content-host-d}
 # Determine if Docker or Podman is available.
 if command -v docker &> /dev/null; then
     CONTAINER_CMD="docker"
+    PULL_ARG="--pull"
 elif command -v podman &> /dev/null; then
     CONTAINER_CMD="podman"
+    PULL_ARG="--pull=always"
 else
     echo "Neither Docker nor Podman is installed. Exiting."
     exit 1
@@ -39,7 +41,7 @@ do
     [[ -d resources ]] && cp -r resources ${var}
     [[ -d setup_scripts ]] && cp -r setup_scripts ${var}
 
-    BUILD_CMD="${CONTAINER_CMD} build ${var} -t ${var,,}"
+    BUILD_CMD="${CONTAINER_CMD} build ${var} -t ${var,,} ${PULL_ARG}"
 
     # Pass ROOT_PASSWD to UBI*-init images if set.
     [[ ${var} =~ -init ]] && [[ -v ROOT_PASSWD ]] && BUILD_CMD+=" --build-arg ROOT_PASSWD=${ROOT_PASSWD}"
@@ -48,7 +50,7 @@ do
 	[[ ${var,,} == ubi7-init ]] && BUILD_CMD+=" --annotation 'run.oci.systemd.force_cgroup_v1=/sys/fs/cgroup'"
 
     # Use proxy if set.
-    [[ -v HTTPS_PROXY ]] && BUILD_CMD+=" --env=HTTPS_PROXY=${HTTPS_PROXY} --net host"
+    [[ -v HTTPS_PROXY ]] && BUILD_CMD+=" --env=HTTPS_PROXY=${HTTPS_PROXY} --network host"
 
     eval ${BUILD_CMD}
 done
